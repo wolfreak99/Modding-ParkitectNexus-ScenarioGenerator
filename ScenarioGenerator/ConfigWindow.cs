@@ -84,7 +84,7 @@ namespace ScenarioGenerator
 				_isWindowOpen = false;
 			}
 			if (GUI.Button(UIRectangle(index++), "Reset")) {
-				_generator.Reset();
+				_generator.Reset(GenerateFlags.All);
 			}
 			if (GUI.Button(UIRectangle(index++), "Cancel")) {
 				_isWindowOpen = false;

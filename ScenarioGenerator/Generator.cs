@@ -25,42 +25,54 @@ namespace ScenarioGenerator
 			this.park = park;
 		}
 
-		public void Reset()
+		public void Reset(GenerateFlags flags)
 		{
 			if (park == null) {
 				return;
 			}
 
-			for (var x = 0; x < park.xSize; x++) {
-				for (var z = 0; z < park.zSize; z++) {
-					var patch = park.getTerrain(x, z);
+			if (flags.HasFlag(GenerateFlags.Height) ||
+				flags.HasFlag(GenerateFlags.TerrainType) ||
+				flags.HasFlag(GenerateFlags.Water)) {
+				for (var x = 0; x < park.xSize; x++) {
+					for (var z = 0; z < park.zSize; z++) {
+						var patch = park.getTerrain(x, z);
 
-					// Remove water if present.
-					if (patch.hasWater()) {
-						WaterFlooding.unflood(new Vector3(x, 0, z));
-					}
+						// Remove water if present.
+						if (flags.HasFlag(GenerateFlags.Water)) {
+							if (patch.hasWater()) {
+								WaterFlooding.unflood(new Vector3(x, 0, z));
+							}
+						}
 
-					// Reset height.
-					for (var i = 0; i < 4; i++) {
-						var d = GROUND_HEIGHT - patch.h[i];
-						if (d != 0) {
-							patch.changeHeight(i, d, true);
+						// Reset height.
+						if (flags.HasFlag(GenerateFlags.Height)) {
+							for (var i = 0; i < 4; i++) {
+								var d = GROUND_HEIGHT - patch.h[i];
+								if (d != 0) {
+									patch.changeHeight(i, d, true);
+								}
+							}
+						}
+
+						// Reset terrain type.
+						if (flags.HasFlag(GenerateFlags.TerrainType)) {
+							patch.TerrainType = DEFAULT_TERRAIN_TYPE;
 						}
 					}
-
-					// Reset terrain type.
-					patch.TerrainType = DEFAULT_TERRAIN_TYPE;
 				}
 			}
-			
-			foreach (var o in ConfigWindow.FindObjectsOfType<TreeEntity>()) {
-				o.Kill();
+
+			if (flags.HasFlag(GenerateFlags.Trees)) {
+				foreach (var o in ConfigWindow.FindObjectsOfType<TreeEntity>()) {
+					o.Kill();
+				}
 			}
 		}
 
 		public void Generate(ValueStore keyStore, GenerateFlags flags)
 		{
-			Reset();
+			Reset(flags);
 
 			if (park == null) {
 				return;

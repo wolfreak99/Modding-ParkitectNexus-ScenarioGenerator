@@ -80,7 +80,7 @@ namespace ScenarioGenerator
 
 
 			if (GUI.Button(UIRectangle(index++), "Generate")) {
-				_generator.Generate(_valuestore);
+				_generator.Generate(_valuestore, GenerateFlags.All);
 				_isWindowOpen = false;
 			}
 			if (GUI.Button(UIRectangle(index++), "Reset")) {

@@ -58,7 +58,7 @@ namespace ScenarioGenerator
 			}
 		}
 
-		public void Generate(ValueStore keyStore)
+		public void Generate(ValueStore keyStore, GenerateFlags flags)
 		{
 			Reset();
 
@@ -74,64 +74,70 @@ namespace ScenarioGenerator
 
 			_waterRandom = new SRandom(seed);
 			_treeRandom = new SRandom(seed);
-			
-			for (var z = 0; z <= park.zSize; z++) {
-				for (var x = 0; x <= park.xSize; x++) {
-					// Generate terrain type for the terrain patch based on perlin noise.
-					if (keyStore.GenerateTerrainType) {
-						var patch = park.getTerrain(x, z);
-						if (patch != null) {
-							var types = ScriptableSingleton<AssetManager>.Instance.terrainTypes.Length;
-							var terrainTypeIndex = Mathf.PerlinNoise(
-								x / (park.xSize * keyStore.TerrainScale) + seed,
-								z / (park.xSize * keyStore.TerrainScale) + seed
+
+			if (flags.HasFlag(GenerateFlags.TerrainType) || flags.HasFlag(GenerateFlags.Height)) {
+				for (var z = 0; z <= park.zSize; z++) {
+					for (var x = 0; x <= park.xSize; x++) {
+						if (flags.HasFlag(GenerateFlags.TerrainType)) {
+							// Generate terrain type for the terrain patch based on perlin noise.
+							if (keyStore.GenerateTerrainType) {
+								var patch = park.getTerrain(x, z);
+								if (patch != null) {
+									var types = ScriptableSingleton<AssetManager>.Instance.terrainTypes.Length;
+									var terrainTypeIndex = Mathf.PerlinNoise(
+										x / (park.xSize * keyStore.TerrainScale) + seed,
+										z / (park.xSize * keyStore.TerrainScale) + seed
+									);
+
+									patch.TerrainType = Mathf.FloorToInt(Mathf.Abs(terrainTypeIndex - 0.5f) * types);
+								}
+							}
+						}
+
+						if (flags.HasFlag(GenerateFlags.Height)) {
+							// Calculate height of terrain patch based on perlin noise.
+							var y = (Mathf.PerlinNoise(
+								x / (park.xSize * keyStore.PlainScale) + seed,
+								z / (park.zSize * keyStore.PlainScale) + seed
+							) * (1 + keyStore.DitchRatio)) - (float)keyStore.DitchRatio;
+							if (y < 0 && keyStore.DitchRatio != 0) {
+								y /= keyStore.DitchRatio;
+							}
+
+							y = y * (y < 0 ? keyStore.MaxDepth : (float)keyStore.MaxHeight);
+							y = y > 0 ? Mathf.FloorToInt(y) : Mathf.CeilToInt(y);
+
+							// Limit heights near road.
+							var roadWidth = Mathf.Max(MIN_ROAD_WIDTH, keyStore.EntranceClearance);
+							if (x < roadWidth) {
+								continue;
+							}
+
+							y = Mathf.Clamp(y, roadWidth - x, x - roadWidth);
+
+							// Limit heights near entrance.
+							var distanceToEntrance = Vector3.Distance(
+								park.parkEntrances.First().transform.position,
+								new Vector3(x, GROUND_HEIGHT, z)
 							);
 
-							patch.TerrainType = Mathf.FloorToInt(Mathf.Abs(terrainTypeIndex - 0.5f) * types);
-						}
-					}
+							if (distanceToEntrance < roadWidth) {
+								continue;
+							}
 
-					// Calculate height of terrain patch based on perlin noise.
-					var y = (Mathf.PerlinNoise(
-						x / (park.xSize * keyStore.PlainScale) + seed,
-						z / (park.zSize * keyStore.PlainScale) + seed
-					) * (1 + keyStore.DitchRatio)) - (float)keyStore.DitchRatio;
-					if (y < 0 && keyStore.DitchRatio != 0) {
-						y /= keyStore.DitchRatio;
-					}
+							// If this location should be raised, change the hight of the patch and the ones around.
+							if (y != 0) {
+								for (var cornerIndex = 0; cornerIndex < 4; cornerIndex++) {
+									var ox = cornerIndex == 1 || cornerIndex == 2 ? 1 : 0;
+									var oz = cornerIndex == 2 || cornerIndex == 3 ? 1 : 0;
 
-					y = y * (y < 0 ? keyStore.MaxDepth : (float)keyStore.MaxHeight);
-					y = y > 0 ? Mathf.FloorToInt(y) : Mathf.CeilToInt(y);
+									var patch = park.getTerrain(x - ox, z - oz);
 
-					// Limit heights near road.
-					var roadWidth = Mathf.Max(MIN_ROAD_WIDTH, keyStore.EntranceClearance);
-					if (x < roadWidth) {
-						continue;
-					}
-
-					y = Mathf.Clamp(y, roadWidth - x, x - roadWidth);
-
-					// Limit heights near entrance.
-					var distanceToEntrance = Vector3.Distance(
-						park.parkEntrances.First().transform.position,
-						new Vector3(x, GROUND_HEIGHT, z)
-					);
-
-					if (distanceToEntrance < roadWidth) {
-						continue;
-					}
-
-					// If this location should be raised, change the hight of the patch and the ones around.
-					if (y != 0) {
-						for (var cornerIndex = 0; cornerIndex < 4; cornerIndex++) {
-							var ox = cornerIndex == 1 || cornerIndex == 2 ? 1 : 0;
-							var oz = cornerIndex == 2 || cornerIndex == 3 ? 1 : 0;
-
-							var patch = park.getTerrain(x - ox, z - oz);
-
-							if (patch != null) {
-								var current = patch.h[cornerIndex] - DEF_HEIGHT;
-								patch.smoothChangeHeight(park, cornerIndex, y - current, true);
+									if (patch != null) {
+										var current = patch.h[cornerIndex] - DEF_HEIGHT;
+										patch.smoothChangeHeight(park, cornerIndex, y - current, true);
+									}
+								}
 							}
 						}
 					}
@@ -139,46 +145,50 @@ namespace ScenarioGenerator
 			}
 
 			// Randomly flood the map.
-			for (var i = 0; i < keyStore.FloodRounds; i++) {
-				var x = Mathf.RoundToInt(_waterRandom.NextFloat(keyStore.EntranceClearance, park.xSize));
-				var z = Mathf.RoundToInt(_waterRandom.NextFloat(0, park.zSize));
+			if (flags.HasFlag(GenerateFlags.Water)) {
+				for (var i = 0; i < keyStore.FloodRounds; i++) {
+					var x = Mathf.RoundToInt(_waterRandom.NextFloat(keyStore.EntranceClearance, park.xSize));
+					var z = Mathf.RoundToInt(_waterRandom.NextFloat(0, park.zSize));
 
-				var patch = park.getTerrain(x, z);
-				if (patch == null || patch.hasWater() || patch.getLowestHeight() >= GROUND_HEIGHT) {
-					continue;
+					var patch = park.getTerrain(x, z);
+					if (patch == null || patch.hasWater() || patch.getLowestHeight() >= GROUND_HEIGHT) {
+						continue;
+					}
+
+					WaterFlooding.flood(new Vector3(x, GROUND_HEIGHT - WATTER_OFFSET, z));
 				}
-
-				WaterFlooding.flood(new Vector3(x, GROUND_HEIGHT - WATTER_OFFSET, z));
 			}
 
 			// Randomly spawn a forrest.
-			for (var i = 0; i < keyStore.TreeCount; i++) {
-				var x = Mathf.RoundToInt(_treeRandom.NextFloat(keyStore.EntranceClearance, park.xSize - PARK_FENCE_OFFSET));
-				var z = Mathf.RoundToInt(_treeRandom.NextFloat(PARK_FENCE_OFFSET, park.zSize - PARK_FENCE_OFFSET));
+			if (flags.HasFlag(GenerateFlags.Trees)) {
+				for (var i = 0; i < keyStore.TreeCount; i++) {
+					var x = Mathf.RoundToInt(_treeRandom.NextFloat(keyStore.EntranceClearance, park.xSize - PARK_FENCE_OFFSET));
+					var z = Mathf.RoundToInt(_treeRandom.NextFloat(PARK_FENCE_OFFSET, park.zSize - PARK_FENCE_OFFSET));
 
-				var patch = park.getTerrain(x, z);
-				if (patch == null || patch.hasWater()) {
-					continue;
-				}
-
-				var y = patch.getHighestHeight();
-				if (y != patch.getLowestHeight()) {
-					continue;
-				}
-
-				TreeEntity fir = null;
-				foreach (var o in ScriptableSingleton<AssetManager>.Instance.getDecoObjects()) {
-					if (o.getName().StartsWith("Fir") && o is TreeEntity) {
-						fir = o as TreeEntity;
+					var patch = park.getTerrain(x, z);
+					if (patch == null || patch.hasWater()) {
+						continue;
 					}
-				}
 
-				if (fir != null) {
-					var tree = ConfigWindow.Instantiate(fir);
-					tree.transform.position = new Vector3(x, y, z);
-					tree.transform.forward = Vector3.forward;
-					tree.Initialize();
-					tree.startAnimateSpawn(Vector3.zero);
+					var y = patch.getHighestHeight();
+					if (y != patch.getLowestHeight()) {
+						continue;
+					}
+
+					TreeEntity fir = null;
+					foreach (var o in ScriptableSingleton<AssetManager>.Instance.getDecoObjects()) {
+						if (o.getName().StartsWith("Fir") && o is TreeEntity) {
+							fir = o as TreeEntity;
+						}
+					}
+
+					if (fir != null) {
+						var tree = ConfigWindow.Instantiate(fir);
+						tree.transform.position = new Vector3(x, y, z);
+						tree.transform.forward = Vector3.forward;
+						tree.Initialize();
+						tree.startAnimateSpawn(Vector3.zero);
+					}
 				}
 			}
 		}

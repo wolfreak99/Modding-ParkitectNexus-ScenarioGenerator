@@ -47,6 +47,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FlagUtil.cs" />
     <Compile Include="GenerateFlags.cs" />
     <Compile Include="Generator.cs" />
     <Compile Include="Main.cs" />

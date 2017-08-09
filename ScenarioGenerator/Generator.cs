@@ -31,22 +31,22 @@ namespace ScenarioGenerator
 				return;
 			}
 
-			if (flags.HasFlag(GenerateFlags.Height) ||
-				flags.HasFlag(GenerateFlags.TerrainType) ||
-				flags.HasFlag(GenerateFlags.Water)) {
+			if (FlagUtil.HasFlag(flags, GenerateFlags.Height) ||
+				FlagUtil.HasFlag(flags, GenerateFlags.TerrainType) ||
+				FlagUtil.HasFlag(flags, GenerateFlags.Water)) {
 				for (var x = 0; x < park.xSize; x++) {
 					for (var z = 0; z < park.zSize; z++) {
 						var patch = park.getTerrain(x, z);
 
 						// Remove water if present.
-						if (flags.HasFlag(GenerateFlags.Water)) {
+						if (FlagUtil.HasFlag(flags, GenerateFlags.Water)) {
 							if (patch.hasWater()) {
 								WaterFlooding.unflood(new Vector3(x, 0, z));
 							}
 						}
 
 						// Reset height.
-						if (flags.HasFlag(GenerateFlags.Height)) {
+						if (FlagUtil.HasFlag(flags, GenerateFlags.Height)) {
 							for (var i = 0; i < 4; i++) {
 								var d = GROUND_HEIGHT - patch.h[i];
 								if (d != 0) {
@@ -56,14 +56,14 @@ namespace ScenarioGenerator
 						}
 
 						// Reset terrain type.
-						if (flags.HasFlag(GenerateFlags.TerrainType)) {
+						if (FlagUtil.HasFlag(flags, GenerateFlags.TerrainType)) {
 							patch.TerrainType = DEFAULT_TERRAIN_TYPE;
 						}
 					}
 				}
 			}
 
-			if (flags.HasFlag(GenerateFlags.Trees)) {
+			if (FlagUtil.HasFlag(flags, GenerateFlags.Trees)) {
 				foreach (var o in ConfigWindow.FindObjectsOfType<TreeEntity>()) {
 					o.Kill();
 				}
@@ -87,10 +87,10 @@ namespace ScenarioGenerator
 			_waterRandom = new SRandom(seed);
 			_treeRandom = new SRandom(seed);
 
-			if (flags.HasFlag(GenerateFlags.TerrainType) || flags.HasFlag(GenerateFlags.Height)) {
+			if (FlagUtil.HasFlag(flags, GenerateFlags.TerrainType) || FlagUtil.HasFlag(flags, GenerateFlags.Height)) {
 				for (var z = 0; z <= park.zSize; z++) {
 					for (var x = 0; x <= park.xSize; x++) {
-						if (flags.HasFlag(GenerateFlags.TerrainType)) {
+						if (FlagUtil.HasFlag(flags, GenerateFlags.TerrainType)) {
 							// Generate terrain type for the terrain patch based on perlin noise.
 							if (keyStore.GenerateTerrainType) {
 								var patch = park.getTerrain(x, z);
@@ -106,7 +106,7 @@ namespace ScenarioGenerator
 							}
 						}
 
-						if (flags.HasFlag(GenerateFlags.Height)) {
+						if (FlagUtil.HasFlag(flags, GenerateFlags.Height)) {
 							// Calculate height of terrain patch based on perlin noise.
 							var y = (Mathf.PerlinNoise(
 								x / (park.xSize * keyStore.PlainScale) + seed,
@@ -157,7 +157,7 @@ namespace ScenarioGenerator
 			}
 
 			// Randomly flood the map.
-			if (flags.HasFlag(GenerateFlags.Water)) {
+			if (FlagUtil.HasFlag(flags, GenerateFlags.Water)) {
 				for (var i = 0; i < keyStore.FloodRounds; i++) {
 					var x = Mathf.RoundToInt(_waterRandom.NextFloat(keyStore.EntranceClearance, park.xSize));
 					var z = Mathf.RoundToInt(_waterRandom.NextFloat(0, park.zSize));
@@ -172,7 +172,7 @@ namespace ScenarioGenerator
 			}
 
 			// Randomly spawn a forrest.
-			if (flags.HasFlag(GenerateFlags.Trees)) {
+			if (FlagUtil.HasFlag(flags, GenerateFlags.Trees)) {
 				for (var i = 0; i < keyStore.TreeCount; i++) {
 					var x = Mathf.RoundToInt(_treeRandom.NextFloat(keyStore.EntranceClearance, park.xSize - PARK_FENCE_OFFSET));
 					var z = Mathf.RoundToInt(_treeRandom.NextFloat(PARK_FENCE_OFFSET, park.zSize - PARK_FENCE_OFFSET));

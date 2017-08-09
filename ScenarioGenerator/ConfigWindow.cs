@@ -32,7 +32,7 @@ namespace ScenarioGenerator
 
 				// If first opening set window to the center
 				if (_windowRectangle.width == 1) {
-					_windowRectangle = new Rect(Screen.width / 2 - 310 / 2, Screen.height / 2 - 500 / 2, 310, 700);
+					_windowRectangle = new Rect(Screen.width / 2 - 310 / 2, Screen.height / 2 - 500 / 2, 310, 744);
 				}
 			}
 		}
@@ -43,6 +43,15 @@ namespace ScenarioGenerator
 			const int elementHeightWithMargin = elementHeight + 2;
 
 			return new Rect(5, 15 + elementHeightWithMargin * index, 300, elementHeight);
+		}
+		private Rect UIRectangleSub(int indexX, int indexY, int countX)
+		{
+			int elementWidth = 300 / countX;
+			int elementWidthWithMargin = elementWidth + 2;
+			const int elementHeight = 20;
+			const int elementHeightWithMargin = elementHeight + 2;
+
+			return new Rect(3 + elementWidthWithMargin * indexX, 15 + elementHeightWithMargin * indexY, elementWidth, elementHeight);
 		}
 
 		private void DoWindow(int windowId)
@@ -83,9 +92,42 @@ namespace ScenarioGenerator
 				_generator.Generate(_valuestore, GenerateFlags.All);
 				_isWindowOpen = false;
 			}
+			{
+				int indexX = 0;
+				if (GUI.Button(UIRectangleSub(indexX++, index, 4), "Height")) {
+					_generator.Generate(_valuestore, GenerateFlags.Height);
+				}
+				if (GUI.Button(UIRectangleSub(indexX++, index, 4), "Type")) {
+					_generator.Generate(_valuestore, GenerateFlags.TerrainType);
+				}
+				if (GUI.Button(UIRectangleSub(indexX++, index, 4), "Water")) {
+					_generator.Generate(_valuestore, GenerateFlags.Water);
+				}
+				if (GUI.Button(UIRectangleSub(indexX++, index, 4), "Trees")) {
+					_generator.Generate(_valuestore, GenerateFlags.Trees);
+				}
+				index++;
+			}
 			if (GUI.Button(UIRectangle(index++), "Reset")) {
 				_generator.Reset(GenerateFlags.All);
 			}
+			{
+				int indexX = 0;
+				if (GUI.Button(UIRectangleSub(indexX++, index, 4), "Height")) {
+					_generator.Reset(GenerateFlags.Height);
+				}
+				if (GUI.Button(UIRectangleSub(indexX++, index, 4), "Type")) {
+					_generator.Reset(GenerateFlags.TerrainType);
+				}
+				if (GUI.Button(UIRectangleSub(indexX++, index, 4), "Water")) {
+					_generator.Reset(GenerateFlags.Water);
+				}
+				if (GUI.Button(UIRectangleSub(indexX++, index, 4), "Trees")) {
+					_generator.Reset(GenerateFlags.Trees);
+				}
+				index++;
+			}
+
 			if (GUI.Button(UIRectangle(index++), "Cancel")) {
 				_isWindowOpen = false;
 			}

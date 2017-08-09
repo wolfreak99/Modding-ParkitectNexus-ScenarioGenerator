@@ -7,8 +7,7 @@ namespace ScenarioGenerator
         private GameObject _go;
 
 		#region Implementation of IMod
-
-
+		
         public void onEnabled()
         {
             _go = new GameObject(Name);

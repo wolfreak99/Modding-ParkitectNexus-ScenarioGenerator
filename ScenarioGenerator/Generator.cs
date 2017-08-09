@@ -45,7 +45,7 @@ namespace ScenarioGenerator
 					{
 						var d = GROUND_HEIGHT - patch.h[i];
 						if (d != 0)
-							patch.changeHeight(i, d);
+							patch.changeHeight(i, d, true);
 					}
 
 					// Reset terrain type.
@@ -128,7 +128,7 @@ namespace ScenarioGenerator
 							if (patch != null)
 							{
 								var current = patch.h[cornerIndex] - DEF_HEIGHT;
-								patch.smoothChangeHeight(park, cornerIndex, y - current);
+								patch.smoothChangeHeight(park, cornerIndex, y - current, true);
 							}
 						}
 				}

@@ -106,7 +106,7 @@ namespace ScenarioGenerator
 			if (GUI.Button(UIRectangle(index++), "clipboard"))
 			{
 				TextEditor te = new TextEditor();
-				te.content = new GUIContent(_displayKey);
+				te.text = _displayKey;
 				te.SelectAll();
 				te.Copy();
 			}

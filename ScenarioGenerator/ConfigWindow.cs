@@ -91,7 +91,7 @@ namespace ScenarioGenerator
 			}
 
 			_displayKey = GUI.TextField(UIRectangle(index++), _displayKey);
-			if (_valuestore.hasValueStoreChange) {
+			if (_valuestore.HasValueStoreChange) {
 				_displayKey = _valuestore.Serialize();
 			}
 			else {

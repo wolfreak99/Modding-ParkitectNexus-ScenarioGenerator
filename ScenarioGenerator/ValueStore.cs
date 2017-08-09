@@ -6,7 +6,7 @@ namespace ScenarioGenerator
 	public class ValueStore
 	{
 		private string previousKey = "";
-		public bool hasValueStoreChange {
+		public bool HasValueStoreChange {
 			get {
 				var key = Serialize();
 				if (this.previousKey != key) {

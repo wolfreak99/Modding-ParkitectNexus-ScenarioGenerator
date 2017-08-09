@@ -77,18 +77,6 @@ namespace ScenarioGenerator
 			
 			for (var z = 0; z <= park.zSize; z++) {
 				for (var x = 0; x <= park.xSize; x++) {
-					// Calculate height of terrain patch based on perlin noise.
-					var y = (Mathf.PerlinNoise(
-						x / (park.xSize * keyStore.PlainScale) + seed,
-						z / (park.zSize * keyStore.PlainScale) + seed
-					) * (1 + keyStore.DitchRatio)) - (float)keyStore.DitchRatio;
-					if (y < 0 && keyStore.DitchRatio != 0) {
-						y /= keyStore.DitchRatio;
-					}
-
-					y = y * (y < 0 ? keyStore.MaxDepth : (float)keyStore.MaxHeight);
-					y = y > 0 ? Mathf.FloorToInt(y) : Mathf.CeilToInt(y);
-
 					// Generate terrain type for the terrain patch based on perlin noise.
 					if (keyStore.GenerateTerrainType) {
 						var patch = park.getTerrain(x, z);
@@ -102,6 +90,18 @@ namespace ScenarioGenerator
 							patch.TerrainType = Mathf.FloorToInt(Mathf.Abs(terrainTypeIndex - 0.5f) * types);
 						}
 					}
+
+					// Calculate height of terrain patch based on perlin noise.
+					var y = (Mathf.PerlinNoise(
+						x / (park.xSize * keyStore.PlainScale) + seed,
+						z / (park.zSize * keyStore.PlainScale) + seed
+					) * (1 + keyStore.DitchRatio)) - (float)keyStore.DitchRatio;
+					if (y < 0 && keyStore.DitchRatio != 0) {
+						y /= keyStore.DitchRatio;
+					}
+
+					y = y * (y < 0 ? keyStore.MaxDepth : (float)keyStore.MaxHeight);
+					y = y > 0 ? Mathf.FloorToInt(y) : Mathf.CeilToInt(y);
 
 					// Limit heights near road.
 					var roadWidth = Mathf.Max(MIN_ROAD_WIDTH, keyStore.EntranceClearance);
